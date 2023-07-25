@@ -16,14 +16,13 @@
 import 'package:easy_ads_flutter/src/easy_admob/easy_admob_app_open_ad.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
-import '../easy_admanager/easy_admanager_app_open_ad.dart';
+import 'easy_admanager_app_open_ad.dart';
 
 /// Listens for app foreground events and shows app open ads.
 class AppLifecycleReactor {
-  final EasyAdmobAppOpenAd? appOpenAdManager;
-  final EasyAdManagerAppOpenAd? appOpenAdManagerManager;
+  final EasyAdManagerAppOpenAd appOpenAdManager;
 
-  AppLifecycleReactor({this.appOpenAdManagerManager, this.appOpenAdManager});
+  AppLifecycleReactor({required this.appOpenAdManager});
 
   void listenToAppStateChanges() {
     AppStateEventNotifier.startListening();
@@ -33,8 +32,7 @@ class AppLifecycleReactor {
 
   void _onAppStateChanged(AppState appState) {
     if (appState == AppState.foreground) {
-      appOpenAdManager?.show();
-      appOpenAdManagerManager?.show();
+      appOpenAdManager.show();
     }
   }
 }

@@ -48,4 +48,13 @@ class TestAdIdManager extends IAdIdManager {
         bannerId: 'IMG_16_9_APP_INSTALL#YOUR_PLACEMENT_ID',
         rewardedId: 'VID_HD_16_9_46S_APP_INSTALL#YOUR_PLACEMENT_ID',
       );
+
+  @override
+  AppAdIds? get adManagerAdIds => const AppAdIds(
+    appId:'ca-app-pub-3940256099942544~1458002511',
+    appOpenId:'/6499/example/app-open',
+    bannerId: '/6499/example/banner',
+    interstitialId: '/6499/example/interstitial',
+    rewardedId: '/6499/example/rewarded',
+  );
 }

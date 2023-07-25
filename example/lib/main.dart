@@ -13,6 +13,7 @@ void main() async {
     adIdManager,
     unityTestMode: true,
     adMobAdRequest: const AdRequest(),
+    adManagerAdRequest:const AdManagerAdRequest(),
     admobConfiguration: RequestConfiguration(testDeviceIds: []),
     fbTestingId: '73f92d66-f8f6-4978-999f-b5e0dd62275a',
     fbTestMode: true,
@@ -54,88 +55,180 @@ class _CountryListScreenState extends State<CountryListScreen> {
         centerTitle: true,
       ),
       body: Center(
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              Text(
-                'AppOpen',
-                style: Theme.of(context)
-                    .textTheme
-                    .headlineMedium!
-                    .copyWith(color: Colors.blue, fontWeight: FontWeight.bold),
+        child: Row(
+          children: [
+            Flexible(
+              child: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    Text(
+                      'AppOpen',
+                      style: Theme.of(context)
+                          .textTheme
+                          .headlineMedium!
+                          .copyWith(color: Colors.blue, fontWeight: FontWeight.bold),
+                    ),
+                    AdButton(
+                      networkName: 'Admob AppOpen',
+                      onTap: () => _showAd(AdNetwork.admob, AdUnitType.appOpen),
+                    ),
+                    const Divider(thickness: 2),
+                    Text(
+                      'Interstitial',
+                      style: Theme.of(context)
+                          .textTheme
+                          .headlineMedium!
+                          .copyWith(color: Colors.blue, fontWeight: FontWeight.bold),
+                    ),
+                    AdButton(
+                      networkName: 'Admob Interstitial',
+                      onTap: () => _showAd(AdNetwork.admob, AdUnitType.interstitial),
+                    ),
+                    AdButton(
+                      networkName: 'Facebook Interstitial',
+                      onTap: () =>
+                          _showAd(AdNetwork.facebook, AdUnitType.interstitial),
+                    ),
+                    AdButton(
+                      networkName: 'Unity Interstitial',
+                      onTap: () => _showAd(AdNetwork.unity, AdUnitType.interstitial),
+                    ),
+                    AdButton(
+                      networkName: 'Applovin Interstitial',
+                      onTap: () =>
+                          _showAd(AdNetwork.appLovin, AdUnitType.interstitial),
+                    ),
+                    AdButton(
+                      networkName: 'Available Interstitial',
+                      onTap: () => _showAvailableAd(AdUnitType.interstitial),
+                    ),
+                    const Divider(thickness: 2),
+                    Text(
+                      'Rewarded',
+                      style: Theme.of(context)
+                          .textTheme
+                          .headlineMedium!
+                          .copyWith(color: Colors.blue, fontWeight: FontWeight.bold),
+                    ),
+                    AdButton(
+                      networkName: 'Admob Rewarded',
+                      onTap: () => _showAd(AdNetwork.admob, AdUnitType.rewarded),
+                    ),
+                    AdButton(
+                      networkName: 'Facebook Rewarded',
+                      onTap: () => _showAd(AdNetwork.facebook, AdUnitType.rewarded),
+                    ),
+                    AdButton(
+                      networkName: 'Unity Rewarded',
+                      onTap: () => _showAd(AdNetwork.unity, AdUnitType.rewarded),
+                    ),
+                    AdButton(
+                      networkName: 'Applovin Rewarded',
+                      onTap: () => _showAd(AdNetwork.appLovin, AdUnitType.rewarded),
+                    ),
+                    AdButton(
+                      networkName: 'Available Rewarded',
+                      onTap: () => _showAvailableAd(AdUnitType.rewarded),
+                    ),
+                    const EasySmartBannerAd(
+                      priorityAdNetworks: [
+                        AdNetwork.facebook,
+                        AdNetwork.admob,
+                        AdNetwork.unity,
+                        AdNetwork.appLovin,
+                      ],
+                    ),
+                  ],
+                ),
               ),
-              AdButton(
-                networkName: 'Admob AppOpen',
-                onTap: () => _showAd(AdNetwork.admob, AdUnitType.appOpen),
+            ),
+            Flexible(
+              child: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    Text(
+                      'AppOpen',
+                      style: Theme.of(context)
+                          .textTheme
+                          .headlineMedium!
+                          .copyWith(color: Colors.blue, fontWeight: FontWeight.bold),
+                    ),
+                    AdButton(
+                      networkName: 'Admob AppOpen',
+                      onTap: () => _showAd(AdNetwork.adManager, AdUnitType.appOpen),
+                    ),
+                    const Divider(thickness: 2),
+                    Text(
+                      'Interstitial',
+                      style: Theme.of(context)
+                          .textTheme
+                          .headlineMedium!
+                          .copyWith(color: Colors.blue, fontWeight: FontWeight.bold),
+                    ),
+                    AdButton(
+                      networkName: 'Admob Interstitial',
+                      onTap: () => _showAd(AdNetwork.adManager, AdUnitType.interstitial),
+                    ),
+                    AdButton(
+                      networkName: 'Facebook Interstitial',
+                      onTap: () =>
+                          _showAd(AdNetwork.facebook, AdUnitType.interstitial),
+                    ),
+                    AdButton(
+                      networkName: 'Unity Interstitial',
+                      onTap: () => _showAd(AdNetwork.unity, AdUnitType.interstitial),
+                    ),
+                    AdButton(
+                      networkName: 'Applovin Interstitial',
+                      onTap: () =>
+                          _showAd(AdNetwork.appLovin, AdUnitType.interstitial),
+                    ),
+                    AdButton(
+                      networkName: 'Available Interstitial',
+                      onTap: () => _showAvailableAd(AdUnitType.interstitial),
+                    ),
+                    const Divider(thickness: 2),
+                    Text(
+                      'Rewarded',
+                      style: Theme.of(context)
+                          .textTheme
+                          .headlineMedium!
+                          .copyWith(color: Colors.blue, fontWeight: FontWeight.bold),
+                    ),
+                    AdButton(
+                      networkName: 'Admob Rewarded',
+                      onTap: () => _showAd(AdNetwork.adManager, AdUnitType.rewarded),
+                    ),
+                    AdButton(
+                      networkName: 'Facebook Rewarded',
+                      onTap: () => _showAd(AdNetwork.facebook, AdUnitType.rewarded),
+                    ),
+                    AdButton(
+                      networkName: 'Unity Rewarded',
+                      onTap: () => _showAd(AdNetwork.unity, AdUnitType.rewarded),
+                    ),
+                    AdButton(
+                      networkName: 'Applovin Rewarded',
+                      onTap: () => _showAd(AdNetwork.appLovin, AdUnitType.rewarded),
+                    ),
+                    AdButton(
+                      networkName: 'Available Rewarded',
+                      onTap: () => _showAvailableAd(AdUnitType.rewarded),
+                    ),
+                    const EasySmartBannerAd(
+                      priorityAdNetworks: [
+                        AdNetwork.facebook,
+                        AdNetwork.adManager,
+                        AdNetwork.admob,
+                        AdNetwork.unity,
+                        AdNetwork.appLovin,
+                      ],
+                    ),
+                  ],
+                ),
               ),
-              const Divider(thickness: 2),
-              Text(
-                'Interstitial',
-                style: Theme.of(context)
-                    .textTheme
-                    .headlineMedium!
-                    .copyWith(color: Colors.blue, fontWeight: FontWeight.bold),
-              ),
-              AdButton(
-                networkName: 'Admob Interstitial',
-                onTap: () => _showAd(AdNetwork.admob, AdUnitType.interstitial),
-              ),
-              AdButton(
-                networkName: 'Facebook Interstitial',
-                onTap: () =>
-                    _showAd(AdNetwork.facebook, AdUnitType.interstitial),
-              ),
-              AdButton(
-                networkName: 'Unity Interstitial',
-                onTap: () => _showAd(AdNetwork.unity, AdUnitType.interstitial),
-              ),
-              AdButton(
-                networkName: 'Applovin Interstitial',
-                onTap: () =>
-                    _showAd(AdNetwork.appLovin, AdUnitType.interstitial),
-              ),
-              AdButton(
-                networkName: 'Available Interstitial',
-                onTap: () => _showAvailableAd(AdUnitType.interstitial),
-              ),
-              const Divider(thickness: 2),
-              Text(
-                'Rewarded',
-                style: Theme.of(context)
-                    .textTheme
-                    .headlineMedium!
-                    .copyWith(color: Colors.blue, fontWeight: FontWeight.bold),
-              ),
-              AdButton(
-                networkName: 'Admob Rewarded',
-                onTap: () => _showAd(AdNetwork.admob, AdUnitType.rewarded),
-              ),
-              AdButton(
-                networkName: 'Facebook Rewarded',
-                onTap: () => _showAd(AdNetwork.facebook, AdUnitType.rewarded),
-              ),
-              AdButton(
-                networkName: 'Unity Rewarded',
-                onTap: () => _showAd(AdNetwork.unity, AdUnitType.rewarded),
-              ),
-              AdButton(
-                networkName: 'Applovin Rewarded',
-                onTap: () => _showAd(AdNetwork.appLovin, AdUnitType.rewarded),
-              ),
-              AdButton(
-                networkName: 'Available Rewarded',
-                onTap: () => _showAvailableAd(AdUnitType.rewarded),
-              ),
-              const EasySmartBannerAd(
-                priorityAdNetworks: [
-                  AdNetwork.facebook,
-                  AdNetwork.admob,
-                  AdNetwork.unity,
-                  AdNetwork.appLovin,
-                ],
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

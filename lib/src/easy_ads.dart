@@ -17,18 +17,27 @@ import 'package:easy_ads_flutter/src/utils/easy_logger.dart';
 import 'package:easy_ads_flutter/src/utils/extensions.dart';
 import 'package:easy_audience_network/easy_audience_network.dart';
 import 'package:flutter/material.dart';
+import 'package:logger/logger.dart';
 import 'package:unity_ads_plugin/unity_ads_plugin.dart';
+
+import 'easy_admanager/easy_admanager_app_open_ad.dart';
+import 'easy_admanager/easy_admanager_banner_ad.dart';
+import 'easy_admanager/easy_admanager_interstitial_ad.dart';
+import 'easy_admanager/easy_admanager_rewarded_ad.dart';
 
 class EasyAds {
   EasyAds._easyAds();
+
   static final EasyAds instance = EasyAds._easyAds();
 
   /// Google admob's ad request
   AdRequest _adRequest = const AdRequest();
+  AdManagerAdRequest _adManagerAdRequest = const AdManagerAdRequest();
   late final IAdIdManager adIdManager;
   late AppLifecycleReactor _appLifecycleReactor;
 
   final _eventController = EasyEventController();
+
   Stream<AdEvent> get onEvent => _eventController.onEvent;
 
   List<EasyAdBase> get _allAds => [..._interstitialAds, ..._rewardedAds];
@@ -60,6 +69,7 @@ class EasyAds {
     bool fbTestMode = false,
     bool isShowAppOpenOnAppStateChange = false,
     AdRequest? adMobAdRequest,
+    AdManagerAdRequest? adManagerAdRequest,
     RequestConfiguration? admobConfiguration,
     bool enableLogger = true,
     String? fbTestingId,
@@ -73,6 +83,10 @@ class EasyAds {
     adIdManager = manager;
     if (adMobAdRequest != null) {
       _adRequest = adMobAdRequest;
+    }
+
+    if (adManagerAdRequest != null) {
+      _adManagerAdRequest = adManagerAdRequest;
     }
 
     if (admobConfiguration != null) {
@@ -113,6 +127,29 @@ class EasyAds {
       );
     }
 
+    /// Ad Manager Ads Initialization
+    final adManagerAdId = manager.adManagerAdIds?.appId;
+    if (adManagerAdId != null && adManagerAdId.isNotEmpty) {
+      final response = await MobileAds.instance.initialize();
+      final status = response.adapterStatuses.values.firstOrNull?.state;
+
+      response.adapterStatuses.forEach((key, value) {
+        _logger.logInfo(
+            'Google-mobile-ads Adapter status for $key: ${value.description}');
+      });
+
+      _eventController.fireNetworkInitializedEvent(
+          AdNetwork.adManager, status == AdapterInitializationState.ready);
+
+      // Initializing adManager Ads
+      await EasyAds.instance._initAdManagerAds(
+          appOpenAdUnitId: manager.adManagerAdIds?.appOpenId,
+          interstitialAdUnitId: manager.adManagerAdIds?.interstitialId,
+          rewardedAdUnitId: manager.adManagerAdIds?.rewardedId,
+          appOpenAdOrientation: appOpenAdOrientation,
+          isShowAppOpenOnAppStateChange: isShowAppOpenOnAppStateChange);
+    }
+
     final unityGameId = manager.unityAdIds?.appId;
     if (unityGameId != null && unityGameId.isNotEmpty) {
       EasyAds.instance._initUnity(
@@ -144,7 +181,17 @@ class EasyAds {
     EasyAdBase? ad;
 
     switch (adNetwork) {
-      case AdNetwork.admob:
+      case AdNetwork.adManager:
+        final bannerId = adIdManager.adManagerAdIds?.bannerId;
+        assert(bannerId != null,
+            'You are trying to create a banner and Ad Manager Banner id is null in ad id manager');
+        if (bannerId != null) {
+          ad = EasyAdManagerBannerAd(bannerId,
+              adSize: adSize, adRequest: _adManagerAdRequest);
+          _eventController.setupEvents(ad);
+        }
+        break;
+        case AdNetwork.admob:
         final bannerId = adIdManager.admobAdIds?.bannerId;
         assert(bannerId != null,
             'You are trying to create a banner and Admob Banner id is null in ad id manager');
@@ -226,6 +273,53 @@ class EasyAds {
       if (isShowAppOpenOnAppStateChange) {
         _appLifecycleReactor =
             AppLifecycleReactor(appOpenAdManager: appOpenAdManager);
+        _appLifecycleReactor.listenToAppStateChanges();
+      }
+      _appOpenAds.add(appOpenAdManager);
+      _eventController.setupEvents(appOpenAdManager);
+    }
+  }
+
+  /// Ad Manager Ads Initialization
+  Future<void> _initAdManagerAds({
+    String? appOpenAdUnitId,
+    String? interstitialAdUnitId,
+    String? rewardedAdUnitId,
+    bool immersiveModeEnabled = true,
+    bool isShowAppOpenOnAppStateChange = true,
+    int appOpenAdOrientation = AppOpenAd.orientationPortrait,
+  }) async {
+    // init interstitial ads
+    if (interstitialAdUnitId != null &&
+        _interstitialAds.doesNotContain(
+            AdNetwork.adManager, AdUnitType.interstitial)) {
+      final ad = EasyAdManagerInterstitialAd(
+          interstitialAdUnitId, _adManagerAdRequest, immersiveModeEnabled);
+      _interstitialAds.add(ad);
+      _eventController.setupEvents(ad);
+
+      await ad.load();
+    }
+
+    // init rewarded ads
+    if (rewardedAdUnitId != null &&
+        _rewardedAds.doesNotContain(AdNetwork.adManager, AdUnitType.rewarded)) {
+      final ad = EasyAdManagerRewardedAd(
+          rewardedAdUnitId, _adManagerAdRequest, immersiveModeEnabled);
+      _rewardedAds.add(ad);
+      _eventController.setupEvents(ad);
+
+      await ad.load();
+    }
+
+    if (appOpenAdUnitId != null &&
+        _appOpenAds.doesNotContain(AdNetwork.adManager, AdUnitType.appOpen)) {
+      final appOpenAdManager =
+          EasyAdManagerAppOpenAd(appOpenAdUnitId, _adManagerAdRequest, appOpenAdOrientation);
+      await appOpenAdManager.load();
+      if (isShowAppOpenOnAppStateChange) {
+        _appLifecycleReactor =
+            AppLifecycleReactor(appOpenAdManagerManager: appOpenAdManager);
         _appLifecycleReactor.listenToAppStateChanges();
       }
       _appOpenAds.add(appOpenAdManager);

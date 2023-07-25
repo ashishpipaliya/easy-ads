@@ -11,6 +11,11 @@ abstract class IAdIdManager {
   /// AppAdIds? get admobAdIds => null;
   AppAdIds? get admobAdIds;
 
+  /// Pass null if you wish not to implement admanager ads
+  ///
+  /// AppAdIds? get admobAdIds => null;
+  AppAdIds? get adManagerAdIds;
+
   /// Pass null if you wish not to implement appLovin ads
   ///
   /// AppAdIds? get appLovinAdIds => null;
