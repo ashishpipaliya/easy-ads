@@ -4,24 +4,25 @@ import 'package:easy_ads_flutter/src/enums/ad_unit_type.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
-class EasyAdmobBannerAd extends EasyAdBase {
-  final AdRequest _adRequest;
+class EasyAdManagerBannerAd extends EasyAdBase {
+  final AdManagerAdRequest _adRequest;
   final AdSize adSize;
 
-  EasyAdmobBannerAd(
+  EasyAdManagerBannerAd(
     String adUnitId, {
-    AdRequest? adRequest,
+    AdManagerAdRequest? adRequest,
     this.adSize = AdSize.banner,
-  })  : _adRequest = adRequest ?? const AdRequest(),
+  })  : _adRequest = adRequest ?? const AdManagerAdRequest(),
         super(adUnitId);
 
-  BannerAd? _bannerAd;
+  AdManagerBannerAd? _bannerAd;
   bool _isAdLoaded = false;
 
   @override
   AdUnitType get adUnitType => AdUnitType.banner;
+
   @override
-  AdNetwork get adNetwork => AdNetwork.admob;
+  AdNetwork get adNetwork => AdNetwork.adManager;
 
   @override
   void dispose() {
@@ -39,12 +40,12 @@ class EasyAdmobBannerAd extends EasyAdBase {
     _bannerAd = null;
     _isAdLoaded = false;
 
-    _bannerAd = BannerAd(
-      size: adSize,
+    _bannerAd = AdManagerBannerAd(
+      sizes: [adSize],
       adUnitId: adUnitId,
-      listener: BannerAdListener(
+      listener: AdManagerBannerAdListener(
         onAdLoaded: (Ad ad) {
-          _bannerAd = ad as BannerAd?;
+          _bannerAd = ad as AdManagerBannerAd?;
           _isAdLoaded = true;
           onAdLoaded?.call(adNetwork, adUnitType, ad);
           onBannerAdReadyForSetState?.call(adNetwork, adUnitType, ad);

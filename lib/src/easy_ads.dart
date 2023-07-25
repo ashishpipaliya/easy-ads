@@ -15,20 +15,22 @@ import 'package:easy_ads_flutter/src/easy_unity/easy_unity_ad.dart';
 import 'package:easy_ads_flutter/src/utils/easy_event_controller.dart';
 import 'package:easy_ads_flutter/src/utils/easy_logger.dart';
 import 'package:easy_ads_flutter/src/utils/extensions.dart';
+import 'package:logger/logger.dart';
 import 'package:unity_ads_plugin/unity_ads_plugin.dart';
 
 class EasyAds {
   EasyAds._easyAds();
+
   static final EasyAds instance = EasyAds._easyAds();
 
   /// Google admob's ad request
   AdRequest _adRequest = const AdRequest();
-
   AdManagerAdRequest _adManagerAdRequest = const AdManagerAdRequest();
   late final IAdIdManager adIdManager;
   late AppLifecycleReactor _appLifecycleReactor;
 
   final _eventController = EasyEventController();
+
   Stream<AdEvent> get onEvent => _eventController.onEvent;
 
   List<EasyAdBase> get _allAds => [..._interstitialAds, ..._rewardedAds];
@@ -68,6 +70,7 @@ class EasyAds {
     if (adMobAdRequest != null) {
       _adRequest = adMobAdRequest;
     }
+
     if (adManagerAdRequest != null) {
       _adManagerAdRequest = adManagerAdRequest;
     }
@@ -92,16 +95,38 @@ class EasyAds {
       final response = await MobileAds.instance.initialize();
       final status = response.adapterStatuses.values.firstOrNull?.state;
 
-      _eventController.fireNetworkInitializedEvent(
-          AdNetwork.admob, status == AdapterInitializationState.ready);
+      _eventController.fireNetworkInitializedEvent(AdNetwork.admob, status == AdapterInitializationState.ready);
 
       // Initializing admob Ads
       await EasyAds.instance._initAdmob(
-        appOpenAdUnitId: manager.admobAdIds?.appOpenId,
-        interstitialAdUnitId: manager.admobAdIds?.interstitialId,
-        rewardedAdUnitId: manager.admobAdIds?.rewardedId,
-        appOpenAdOrientation: appOpenAdOrientation,
-      );
+          appOpenAdUnitId: manager.admobAdIds?.appOpenId,
+          interstitialAdUnitId: manager.admobAdIds?.interstitialId,
+          rewardedAdUnitId: manager.admobAdIds?.rewardedId,
+          appOpenAdOrientation: appOpenAdOrientation);
+
+      // Initializing adManager Ads
+      await EasyAds.instance._initAdManager(
+          appOpenAdUnitId: manager.admobAdIds?.appOpenId,
+          interstitialAdUnitId: manager.admobAdIds?.interstitialId,
+          rewardedAdUnitId: manager.admobAdIds?.rewardedId,
+          appOpenAdOrientation: appOpenAdOrientation);
+    }
+
+    /// Ad Manager Ads
+    final adManagerAdId = manager.adManagerAdIds?.appId;
+    if (adManagerAdId != null && adManagerAdId.isNotEmpty) {
+      final response = await MobileAds.instance.initialize();
+      final status = response.adapterStatuses.values.firstOrNull?.state;
+
+      _eventController.fireNetworkInitializedEvent(AdNetwork.adManager, status == AdapterInitializationState.ready);
+
+      // Initializing admob Ads
+      await EasyAds.instance._initAdmob(
+          appOpenAdUnitId: manager.admobAdIds?.appOpenId,
+          interstitialAdUnitId: manager.admobAdIds?.interstitialId,
+          rewardedAdUnitId: manager.admobAdIds?.rewardedId,
+          appOpenAdOrientation: appOpenAdOrientation,
+          adType: GoogleAdType.adManager);
     }
 
     final unityGameId = manager.unityAdIds?.appId;
@@ -129,25 +154,21 @@ class EasyAds {
   ///
   /// if [adNetwork] is provided, only that network's ad would be created. For now, only unity and admob banner is supported
   /// [adSize] is used to provide ad banner size
-  EasyAdBase? createBanner(
-      {required AdNetwork adNetwork, AdSize adSize = AdSize.banner}) {
+  EasyAdBase? createBanner({required AdNetwork adNetwork, AdSize adSize = AdSize.banner}) {
     EasyAdBase? ad;
 
     switch (adNetwork) {
       case AdNetwork.admob:
         final bannerId = adIdManager.admobAdIds?.bannerId;
-        assert(bannerId != null,
-            'You are trying to create a banner and Admob Banner id is null in ad id manager');
+        assert(bannerId != null, 'You are trying to create a banner and Admob Banner id is null in ad id manager');
         if (bannerId != null) {
-          ad = EasyAdmobBannerAd(bannerId,
-              adSize: adSize, adRequest: _adRequest);
+          ad = EasyAdmobBannerAd(bannerId, adSize: adSize, adRequest: _adRequest);
           _eventController.setupEvents(ad);
         }
         break;
       case AdNetwork.unity:
         final bannerId = adIdManager.unityAdIds?.bannerId;
-        assert(bannerId != null,
-            'You are trying to create a banner and Unity Banner id is null in ad id manager');
+        assert(bannerId != null, 'You are trying to create a banner and Unity Banner id is null in ad id manager');
         if (bannerId != null) {
           ad = EasyUnityBannerAd(bannerId, adSize: adSize);
           _eventController.setupEvents(ad);
@@ -155,8 +176,7 @@ class EasyAds {
         break;
       case AdNetwork.facebook:
         final bannerId = adIdManager.fbAdIds?.bannerId;
-        assert(bannerId != null,
-            'You are trying to create a banner and Facebook Banner id is null in ad id manager');
+        assert(bannerId != null, 'You are trying to create a banner and Facebook Banner id is null in ad id manager');
         if (bannerId != null) {
           ad = EasyFacebookBannerAd(bannerId, adSize: adSize);
           _eventController.setupEvents(ad);
@@ -164,8 +184,7 @@ class EasyAds {
         break;
       case AdNetwork.appLovin:
         final bannerId = adIdManager.appLovinAdIds?.bannerId;
-        assert(bannerId != null,
-            'You are trying to create a banner and Applovin Banner id is null in ad id manager');
+        assert(bannerId != null, 'You are trying to create a banner and Applovin Banner id is null in ad id manager');
         if (bannerId != null) {
           ad = EasyApplovinBannerAd(bannerId);
           _eventController.setupEvents(ad);
@@ -177,19 +196,16 @@ class EasyAds {
     return ad;
   }
 
-  Future<void> _initAdmob({
-    String? appOpenAdUnitId,
-    String? interstitialAdUnitId,
-    String? rewardedAdUnitId,
-    bool immersiveModeEnabled = true,
-    int appOpenAdOrientation = AppOpenAd.orientationPortrait,
-  }) async {
+  Future<void> _initAdmob(
+      {String? appOpenAdUnitId,
+      String? interstitialAdUnitId,
+      String? rewardedAdUnitId,
+      bool immersiveModeEnabled = true,
+      int appOpenAdOrientation = AppOpenAd.orientationPortrait
+    }) async {
     // init interstitial ads
-    if (interstitialAdUnitId != null &&
-        _interstitialAds.doesNotContain(
-            AdNetwork.admob, AdUnitType.interstitial)) {
-      final ad = EasyAdmobInterstitialAd(
-          interstitialAdUnitId, _adRequest, immersiveModeEnabled);
+    if (interstitialAdUnitId != null && _interstitialAds.doesNotContain(AdNetwork.admob, AdUnitType.interstitial)) {
+      final ad = EasyAdmobInterstitialAd(interstitialAdUnitId, _adRequest, immersiveModeEnabled);
       _interstitialAds.add(ad);
       _eventController.setupEvents(ad);
 
@@ -197,29 +213,58 @@ class EasyAds {
     }
 
     // init rewarded ads
-    if (rewardedAdUnitId != null &&
-        _rewardedAds.doesNotContain(AdNetwork.admob, AdUnitType.rewarded)) {
-      final ad = EasyAdmobRewardedAd(
-          rewardedAdUnitId, _adRequest, immersiveModeEnabled);
+    if (rewardedAdUnitId != null && _rewardedAds.doesNotContain(AdNetwork.admob, AdUnitType.rewarded)) {
+      final ad = EasyAdmobRewardedAd(rewardedAdUnitId, _adRequest, immersiveModeEnabled);
       _rewardedAds.add(ad);
       _eventController.setupEvents(ad);
 
       await ad.load();
     }
 
-    if (appOpenAdUnitId != null &&
-        _appOpenAds.doesNotContain(AdNetwork.admob, AdUnitType.appOpen)) {
-      final appOpenAdManager =
-          EasyAdmobAppOpenAd(appOpenAdUnitId, _adRequest, appOpenAdOrientation);
+    if (appOpenAdUnitId != null && _appOpenAds.doesNotContain(AdNetwork.admob, AdUnitType.appOpen)) {
+      final appOpenAdManager = EasyAdmobAppOpenAd(appOpenAdUnitId, _adRequest, appOpenAdOrientation);
       await appOpenAdManager.load();
-      _appLifecycleReactor =
-          AppLifecycleReactor(appOpenAdManager: appOpenAdManager);
+      _appLifecycleReactor = AppLifecycleReactor(appOpenAdManager: appOpenAdManager);
       _appLifecycleReactor.listenToAppStateChanges();
       _appOpenAds.add(appOpenAdManager);
       _eventController.setupEvents(appOpenAdManager);
     }
   }
 
+  Future<void> _initAdManager(
+      {String? appOpenAdUnitId,
+        String? interstitialAdUnitId,
+        String? rewardedAdUnitId,
+        bool immersiveModeEnabled = true,
+        int appOpenAdOrientation = AppOpenAd.orientationPortrait
+      }) async {
+    // init interstitial ads
+    if (interstitialAdUnitId != null && _interstitialAds.doesNotContain(AdNetwork.adManager, AdUnitType.interstitial)) {
+      final ad = EasyAdmobInterstitialAd(interstitialAdUnitId, _adRequest, immersiveModeEnabled);
+      _interstitialAds.add(ad);
+      _eventController.setupEvents(ad);
+
+      await ad.load();
+    }
+
+    // init rewarded ads
+    if (rewardedAdUnitId != null && _rewardedAds.doesNotContain(AdNetwork.adManager, AdUnitType.rewarded)) {
+      final ad = EasyAdmobRewardedAd(rewardedAdUnitId, _adRequest, immersiveModeEnabled);
+      _rewardedAds.add(ad);
+      _eventController.setupEvents(ad);
+
+      await ad.load();
+    }
+
+    if (appOpenAdUnitId != null && _appOpenAds.doesNotContain(AdNetwork.adManager, AdUnitType.appOpen)) {
+      final appOpenAdManager = EasyAdmobAppOpenAd(appOpenAdUnitId, _adManagerAdRequest, appOpenAdOrientation);
+      await appOpenAdManager.load();
+      _appLifecycleReactor = AppLifecycleReactor(appOpenAdManager: appOpenAdManager);
+      _appLifecycleReactor.listenToAppStateChanges();
+      _appOpenAds.add(appOpenAdManager);
+      _eventController.setupEvents(appOpenAdManager);
+    }
+  }
   Future<void> _initAppLovin({
     String? sdkKey,
     bool? isAgeRestrictedUser,
@@ -238,8 +283,7 @@ class EasyAds {
 
       // init interstitial ads
       if (interstitialAdUnitId != null &&
-          _interstitialAds.doesNotContain(
-              AdNetwork.appLovin, AdUnitType.interstitial)) {
+          _interstitialAds.doesNotContain(AdNetwork.appLovin, AdUnitType.interstitial)) {
         final ad = EasyApplovinInterstitialAd(interstitialAdUnitId);
         _interstitialAds.add(ad);
         _eventController.setupEvents(ad);
@@ -248,9 +292,7 @@ class EasyAds {
       }
 
       // init rewarded ads
-      if (rewardedAdUnitId != null &&
-          _rewardedAds.doesNotContain(
-              AdNetwork.appLovin, AdUnitType.rewarded)) {
+      if (rewardedAdUnitId != null && _rewardedAds.doesNotContain(AdNetwork.appLovin, AdUnitType.rewarded)) {
         final ad = EasyApplovinRewardedAd(rewardedAdUnitId);
         _rewardedAds.add(ad);
         _eventController.setupEvents(ad);
@@ -273,18 +315,14 @@ class EasyAds {
       await UnityAds.init(
         gameId: unityGameId,
         testMode: testMode,
-        onComplete: () =>
-            _eventController.fireNetworkInitializedEvent(AdNetwork.unity, true),
+        onComplete: () => _eventController.fireNetworkInitializedEvent(AdNetwork.unity, true),
         onFailed: (UnityAdsInitializationError error, String s) =>
-            _eventController.fireNetworkInitializedEvent(
-                AdNetwork.unity, false),
+            _eventController.fireNetworkInitializedEvent(AdNetwork.unity, false),
       );
     }
 
     // init interstitial ads
-    if (interstitialPlacementId != null &&
-        _interstitialAds.doesNotContain(
-            AdNetwork.unity, AdUnitType.interstitial)) {
+    if (interstitialPlacementId != null && _interstitialAds.doesNotContain(AdNetwork.unity, AdUnitType.interstitial)) {
       final ad = EasyUnityAd(interstitialPlacementId, AdUnitType.interstitial);
       _interstitialAds.add(ad);
       _eventController.setupEvents(ad);
@@ -293,8 +331,7 @@ class EasyAds {
     }
 
     // init rewarded ads
-    if (rewardedPlacementId != null &&
-        _rewardedAds.doesNotContain(AdNetwork.unity, AdUnitType.rewarded)) {
+    if (rewardedPlacementId != null && _rewardedAds.doesNotContain(AdNetwork.unity, AdUnitType.rewarded)) {
       final ad = EasyUnityAd(rewardedPlacementId, AdUnitType.rewarded);
       _rewardedAds.add(ad);
       _eventController.setupEvents(ad);
@@ -311,19 +348,14 @@ class EasyAds {
     String? rewardedPlacementId,
   }) async {
     final status = await AudienceNetwork.init(
-        testingId: testingId,
-        testMode: testMode,
-        iOSAdvertiserTrackingEnabled: iOSAdvertiserTrackingEnabled);
+        testingId: testingId, testMode: testMode, iOSAdvertiserTrackingEnabled: iOSAdvertiserTrackingEnabled);
 
-    _eventController.fireNetworkInitializedEvent(
-        AdNetwork.facebook, status ?? false);
+    _eventController.fireNetworkInitializedEvent(AdNetwork.facebook, status ?? false);
 
     // init interstitial ads
     if (interstitialPlacementId != null &&
-        _interstitialAds.doesNotContain(
-            AdNetwork.facebook, AdUnitType.interstitial)) {
-      final ad = EasyFacebookFullScreenAd(
-          interstitialPlacementId, AdUnitType.interstitial);
+        _interstitialAds.doesNotContain(AdNetwork.facebook, AdUnitType.interstitial)) {
+      final ad = EasyFacebookFullScreenAd(interstitialPlacementId, AdUnitType.interstitial);
       _interstitialAds.add(ad);
       _eventController.setupEvents(ad);
 
@@ -331,10 +363,8 @@ class EasyAds {
     }
 
     // init rewarded ads
-    if (rewardedPlacementId != null &&
-        _rewardedAds.doesNotContain(AdNetwork.facebook, AdUnitType.rewarded)) {
-      final ad =
-          EasyFacebookFullScreenAd(rewardedPlacementId, AdUnitType.rewarded);
+    if (rewardedPlacementId != null && _rewardedAds.doesNotContain(AdNetwork.facebook, AdUnitType.rewarded)) {
+      final ad = EasyFacebookFullScreenAd(rewardedPlacementId, AdUnitType.rewarded);
       _rewardedAds.add(ad);
       _eventController.setupEvents(ad);
 
@@ -348,24 +378,18 @@ class EasyAds {
   ///
   /// [adUnitType] should be mentioned here, only interstitial or rewarded should be mentioned here
   bool showRandomAd(AdUnitType adUnitType) {
-    assert(
-        adUnitType == AdUnitType.interstitial ||
-            adUnitType == AdUnitType.rewarded,
+    assert(adUnitType == AdUnitType.interstitial || adUnitType == AdUnitType.rewarded,
         'Only interstitial and rewarded types should be passed to this method');
 
-    final List<EasyAdBase> ads = (adUnitType == AdUnitType.rewarded
-            ? _rewardedAds
-            : _interstitialAds)
-        .toList(growable: false)
-      ..shuffle();
+    final List<EasyAdBase> ads =
+        (adUnitType == AdUnitType.rewarded ? _rewardedAds : _interstitialAds).toList(growable: false)..shuffle();
 
     for (final ad in ads) {
       if (ad.isAdLoaded) {
         ad.show();
         return true;
       } else {
-        _logger.logInfo(
-            '${ad.adNetwork} ${ad.adUnitType} was not loaded, so called loading');
+        _logger.logInfo('${ad.adNetwork} ${ad.adUnitType} was not loaded, so called loading');
         ad.load();
       }
     }
@@ -398,8 +422,7 @@ class EasyAds {
           return true;
         }
       } else {
-        _logger.logInfo(
-            '${ad.adNetwork} ${ad.adUnitType} was not loaded, so called loading');
+        _logger.logInfo('${ad.adNetwork} ${ad.adUnitType} was not loaded, so called loading');
         ad.load();
       }
     }
@@ -430,9 +453,8 @@ class EasyAds {
   ///
   /// if [adNetwork] is provided, only that network's ad would be checked
   bool isRewardedAdLoaded({AdNetwork adNetwork = AdNetwork.any}) {
-    final ad = _rewardedAds.firstWhereOrNull((e) =>
-        (adNetwork == AdNetwork.any || adNetwork == e.adNetwork) &&
-        e.isAdLoaded);
+    final ad =
+        _rewardedAds.firstWhereOrNull((e) => (adNetwork == AdNetwork.any || adNetwork == e.adNetwork) && e.isAdLoaded);
     return ad?.isAdLoaded ?? false;
   }
 
@@ -440,9 +462,8 @@ class EasyAds {
   ///
   /// if [adNetwork] is provided, only that network's ad would be checked
   bool isInterstitialAdLoaded({AdNetwork adNetwork = AdNetwork.any}) {
-    final ad = _interstitialAds.firstWhereOrNull((e) =>
-        (adNetwork == AdNetwork.any || adNetwork == e.adNetwork) &&
-        e.isAdLoaded);
+    final ad = _interstitialAds
+        .firstWhereOrNull((e) => (adNetwork == AdNetwork.any || adNetwork == e.adNetwork) && e.isAdLoaded);
     return ad?.isAdLoaded ?? false;
   }
 
@@ -453,8 +474,7 @@ class EasyAds {
   ///
   /// if [adNetwork] is provided only that network's ads will be disposed otherwise it will be ignored
   /// if [adUnitType] is provided only that ad unit type will be disposed, otherwise it will be ignored
-  void destroyAds(
-      {AdNetwork adNetwork = AdNetwork.any, AdUnitType? adUnitType}) {
+  void destroyAds({AdNetwork adNetwork = AdNetwork.any, AdUnitType? adUnitType}) {
     for (final e in _allAds) {
       if ((adNetwork == AdNetwork.any || adNetwork == e.adNetwork) &&
           (adUnitType == null || adUnitType == e.adUnitType)) {

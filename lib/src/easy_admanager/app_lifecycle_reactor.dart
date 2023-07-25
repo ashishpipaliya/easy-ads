@@ -16,9 +16,11 @@
 import 'package:easy_ads_flutter/src/easy_admob/easy_admob_app_open_ad.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
+import 'easy_admob_app_open_ad.dart';
+
 /// Listens for app foreground events and shows app open ads.
 class AppLifecycleReactor {
-  final EasyAdmobAppOpenAd appOpenAdManager;
+  final EasyAdManagerAppOpenAd appOpenAdManager;
 
   AppLifecycleReactor({required this.appOpenAdManager});
 

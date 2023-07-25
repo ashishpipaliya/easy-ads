@@ -4,7 +4,7 @@ import 'package:easy_ads_flutter/src/enums/ad_unit_type.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 class EasyAdmobRewardedAd extends EasyAdBase {
-  final AdRequest _adRequest;
+  final AdManagerAdRequest _adRequest;
   final bool _immersiveModeEnabled;
 
   EasyAdmobRewardedAd(
@@ -17,7 +17,7 @@ class EasyAdmobRewardedAd extends EasyAdBase {
   bool _isAdLoaded = false;
 
   @override
-  AdNetwork get adNetwork => AdNetwork.admob;
+  AdNetwork get adNetwork => AdNetwork.adManager;
 
   @override
   AdUnitType get adUnitType => AdUnitType.rewarded;
@@ -35,19 +35,17 @@ class EasyAdmobRewardedAd extends EasyAdBase {
   @override
   Future<void> load() async {
     if (_isAdLoaded) return;
-    await RewardedAd.load(
+    await RewardedAd.loadWithAdManagerAdRequest(
         adUnitId: adUnitId,
-        request: _adRequest,
-        rewardedAdLoadCallback:
-            RewardedAdLoadCallback(onAdLoaded: (RewardedAd ad) {
+        adManagerRequest: _adRequest,
+        rewardedAdLoadCallback: RewardedAdLoadCallback(onAdLoaded: (RewardedAd ad) {
           _rewardedAd = ad;
           _isAdLoaded = true;
           onAdLoaded?.call(adNetwork, adUnitType, ad);
         }, onAdFailedToLoad: (LoadAdError error) {
           _rewardedAd = null;
           _isAdLoaded = false;
-          onAdFailedToLoad?.call(
-              adNetwork, adUnitType, error, error.toString());
+          onAdFailedToLoad?.call(adNetwork, adUnitType, error, error.toString());
         }));
   }
 

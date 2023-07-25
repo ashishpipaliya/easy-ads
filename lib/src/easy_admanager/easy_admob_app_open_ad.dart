@@ -1,15 +1,16 @@
 import 'package:easy_ads_flutter/easy_ads_flutter.dart';
 
-class EasyAdmobAppOpenAd extends EasyAdBase {
-  final AdRequest _adRequest;
+class EasyAdManagerAppOpenAd extends EasyAdBase {
+  final AdManagerAdRequest _adRequest;
   final int _orientation;
 
-  EasyAdmobAppOpenAd(super.adUnitId, this._adRequest, this._orientation);
+  EasyAdManagerAppOpenAd(super.adUnitId, this._adRequest, this._orientation);
+
   AppOpenAd? _appOpenAd;
   bool _isShowingAd = false;
 
   @override
-  AdNetwork get adNetwork => AdNetwork.admob;
+  AdNetwork get adNetwork => AdNetwork.adManager;
 
   @override
   AdUnitType get adUnitType => AdUnitType.appOpen;
@@ -27,9 +28,9 @@ class EasyAdmobAppOpenAd extends EasyAdBase {
   Future<void> load() {
     if (isAdLoaded) return Future.value();
 
-    return AppOpenAd.load(
+    return AppOpenAd.loadWithAdManagerAdRequest(
       adUnitId: adUnitId,
-      request: _adRequest,
+      adManagerAdRequest: _adRequest,
       orientation: _orientation,
       adLoadCallback: AppOpenAdLoadCallback(
         onAdLoaded: (AppOpenAd ad) {
@@ -38,8 +39,7 @@ class EasyAdmobAppOpenAd extends EasyAdBase {
         },
         onAdFailedToLoad: (LoadAdError error) {
           _appOpenAd = null;
-          onAdFailedToLoad?.call(
-              adNetwork, adUnitType, error, error.toString());
+          onAdFailedToLoad?.call(adNetwork, adUnitType, error, error.toString());
         },
       ),
     );
@@ -53,8 +53,7 @@ class EasyAdmobAppOpenAd extends EasyAdBase {
     }
 
     if (_isShowingAd) {
-      onAdFailedToShow?.call(adNetwork, adUnitType, null,
-          'Tried to show ad while already showing an ad.');
+      onAdFailedToShow?.call(adNetwork, adUnitType, null, 'Tried to show ad while already showing an ad.');
       return;
     }
 
