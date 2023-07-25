@@ -23,6 +23,8 @@ class EasyAds {
 
   /// Google admob's ad request
   AdRequest _adRequest = const AdRequest();
+
+  AdManagerAdRequest _adManagerAdRequest = const AdManagerAdRequest();
   late final IAdIdManager adIdManager;
   late AppLifecycleReactor _appLifecycleReactor;
 
@@ -53,6 +55,7 @@ class EasyAds {
     bool unityTestMode = false,
     bool fbTestMode = false,
     AdRequest? adMobAdRequest,
+    AdManagerAdRequest? adManagerAdRequest,
     RequestConfiguration? admobConfiguration,
     bool enableLogger = true,
     String? fbTestingId,
@@ -64,6 +67,9 @@ class EasyAds {
     adIdManager = manager;
     if (adMobAdRequest != null) {
       _adRequest = adMobAdRequest;
+    }
+    if (adManagerAdRequest != null) {
+      _adManagerAdRequest = adManagerAdRequest;
     }
 
     if (admobConfiguration != null) {
